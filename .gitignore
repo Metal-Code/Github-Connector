@@ -1,0 +1,49 @@
+# Environment — NEVER commit this
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+*.env
+.env
+*.env.*
+
+# Virtual Environment (The node_modules equivalent)
+venv/
+ENV/
+env/
+
+# Python Cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment Variables (Already mentioned, but critical)
+.env
+
+# IDE Specific (Optional but helpful)
+.vscode/
+.idea/
+
+# Distribution / Build (If you ever package the app)
+dist/
+build/
+*.egg-info/
