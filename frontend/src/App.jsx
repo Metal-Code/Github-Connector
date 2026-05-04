@@ -276,6 +276,7 @@ export default function App() {
           <span>
             <strong style={{ color: "#A5B4FC" }}>GitHub Login coming soon</strong>
             {" "}— until then, make sure the repository and file you want to review is <strong style={{ color: "#A5B4FC" }}>public</strong>.
+            <strong>TOTAL NEW FRONTEND MAKEOVER DEPLOYING SOON</strong>
           </span>
         </div>
 
