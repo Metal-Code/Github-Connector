@@ -248,6 +248,7 @@ export default function App() {
             background: "linear-gradient(135deg, #6366F1, #8B5CF6)",
             display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22
           }}>🔍</div>
+          
           <div>
             <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700, color: "white", letterSpacing: "-0.5px" }}>
               AI Code Reviewer
@@ -257,6 +258,27 @@ export default function App() {
             </p>
           </div>
         </div>
+
+        {/* Add this right after the closing div of the header flex row */}
+        <div style={{
+          marginTop: 12,
+          background: "rgba(99, 102, 241, 0.15)",
+          border: "1px solid rgba(99, 102, 241, 0.3)",
+          borderRadius: 10,
+          padding: "10px 16px",
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          fontSize: 13,
+          color: "#C7D2FE"
+        }}>
+          <span>🔒</span>
+          <span>
+            <strong style={{ color: "#A5B4FC" }}>GitHub Login coming soon</strong>
+            {" "}— until then, make sure the repository and file you want to review is <strong style={{ color: "#A5B4FC" }}>public</strong>.
+          </span>
+        </div>
+
       </div>
 
       <div style={{ maxWidth: 760, margin: "0 auto", display: "flex", flexDirection: "column", gap: 20 }}>
