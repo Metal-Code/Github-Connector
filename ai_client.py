@@ -1,56 +1,145 @@
 import httpx
+import json
+import re
 from fastapi import HTTPException
 from config import OPENROUTER_API_KEY
 
 OPENROUTER_BASE = "https://openrouter.ai/api/v1"
-MODEL = "openrouter/auto"  # You can change this to any model on OpenRouter
+MODEL = "openrouter/auto"
 
 
 def get_headers() -> dict:
     return {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "http://localhost:8000",  # Required by OpenRouter
-        "X-Title": "GitHub Cloud Connector"       # Shows in OpenRouter dashboard
+        "HTTP-Referer": "http://localhost:8000",
+        "X-Title": "CodeReview AI"
     }
 
 
-SYSTEM_PROMPT = """You are a senior software engineer doing a code review.
-Analyze the provided code and return ONLY a valid JSON object with this exact structure:
+SYSTEM_PROMPT = """You are an expert code reviewer. Analyze the provided code and return ONLY a valid JSON object.
+
+Return this EXACT structure with no markdown, no code fences, no explanation outside the JSON:
 
 {
-  "overall_rating": <integer from 1 to 10>,
-  "summary": "<2-3 sentence overall assessment>",
-  "bugs": [
+  "total_score": <integer 0-100>,
+  "summary": "<2-3 sentence overall assessment of the code quality>",
+  "language": "<detected programming language>",
+  "code_issues": [
     {
-      "line": "<line number or range if known, else 'N/A'>",
-      "severity": "<critical | high | medium | low>",
-      "description": "<what the bug is>",
-      "fix": "<how to fix it>"
+      "id": <integer starting from 1>,
+      "line": <line number as integer, or 0 if unknown>,
+      "error_code_line": "<the actual problematic code snippet from the file>",
+      "severity": "<one of: critical | high | medium | low>",
+      "category": "<one of: bug | security | performance | style | maintainability>",
+      "description": "<clear explanation of what is wrong and why it matters>",
+      "fix_code": "<the corrected code snippet that fixes this issue>"
     }
   ],
   "suggestions": [
     {
-      "category": "<readability | performance | security | best_practice>",
-      "description": "<what to improve>",
-      "example": "<short code snippet showing the improvement, or null>"
+      "id": <integer starting from 1>,
+      "category": "<one of: performance | readability | security | best_practice | maintainability>",
+      "description": "<what to improve and why>",
+      "before": "<code snippet showing current approach>",
+      "after": "<code snippet showing improved approach>"
     }
   ],
   "positives": [
-    "<something done well>"
-  ]
+    "<something genuinely done well in the code>"
+  ],
+  "metrics": {
+    "total_bugs": <count of code_issues array>,
+    "critical_count": <count of critical severity issues>,
+    "high_count": <count of high severity issues>,
+    "medium_count": <count of medium severity issues>,
+    "low_count": <count of low severity issues>,
+    "suggestions_count": <count of suggestions array>
+  }
 }
 
-Rules:
-- Return ONLY the JSON object, no markdown, no explanation outside it
-- If no bugs found, return an empty array for bugs
-- Be specific and actionable in all feedback
-- Rate honestly: 10 means production-perfect code
+STRICT RULES:
+- Return ONLY the raw JSON object. No markdown. No ```json fences. No text before or after.
+- total_score is 0 to 100. 100 means perfect production-ready code.
+- error_code_line must be the actual code from the file, not a description.
+- fix_code must be actual working corrected code, not a description.
+- metrics.total_bugs must equal the exact length of code_issues array.
+- If no issues found, use empty array [] for code_issues.
+- If no suggestions, use empty array [] for suggestions.
 """
 
 
+def clean_json_response(raw: str) -> str:
+    """Strip markdown fences and extra whitespace from AI response."""
+    raw = raw.strip()
+    if raw.startswith("```"):
+        lines = raw.split("\n")
+        lines = lines[1:]  # Remove ```json or ```
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]
+        raw = "\n".join(lines).strip()
+    return raw
+
+
+def validate_and_fix(data: dict, language: str) -> dict:
+    """Ensure all required fields exist with correct types."""
+
+    # Fix total_score
+    score = data.get("total_score", 50)
+    if isinstance(score, float):
+        score = int(score)
+    # Convert 0-10 scale to 0-100 if model used wrong scale
+    if isinstance(score, int) and score <= 10:
+        score = score * 10
+    data["total_score"] = max(0, min(100, int(score)))
+
+    # Ensure required fields
+    data.setdefault("summary", "Code review completed.")
+    data.setdefault("language", language)
+    data.setdefault("code_issues", [])
+    data.setdefault("suggestions", [])
+    data.setdefault("positives", [])
+
+    # Validate each issue
+    for i, issue in enumerate(data["code_issues"]):
+        issue["id"] = i + 1
+        issue.setdefault("line", 0)
+        issue.setdefault("error_code_line", "N/A")
+        issue.setdefault("severity", "medium")
+        issue.setdefault("category", "bug")
+        issue.setdefault("description", "No description provided.")
+        issue.setdefault("fix_code", "No fix provided.")
+        # Normalize severity value
+        sev = issue["severity"].lower().strip()
+        issue["severity"] = sev if sev in ["critical", "high", "medium", "low"] else "medium"
+        # Normalize category
+        cat = issue["category"].lower().strip()
+        issue["category"] = cat if cat in ["bug", "security", "performance", "style", "maintainability"] else "bug"
+
+    # Validate each suggestion
+    for i, sug in enumerate(data["suggestions"]):
+        sug["id"] = i + 1
+        sug.setdefault("category", "best_practice")
+        sug.setdefault("description", "No description provided.")
+        sug.setdefault("before", "")
+        sug.setdefault("after", "")
+
+    # Always recalculate metrics from actual data
+    issues = data["code_issues"]
+    data["metrics"] = {
+        "total_bugs": len(issues),
+        "critical_count": sum(1 for i in issues if i.get("severity") == "critical"),
+        "high_count": sum(1 for i in issues if i.get("severity") == "high"),
+        "medium_count": sum(1 for i in issues if i.get("severity") == "medium"),
+        "low_count": sum(1 for i in issues if i.get("severity") == "low"),
+        "suggestions_count": len(data["suggestions"])
+    }
+
+    return data
+
+
 def review_code(code: str, language: str) -> dict:
-    user_message = f"Please review this {language} code:\n\n```{language}\n{code}\n```"
+    user_message = f"Review this {language} code:\n\n{code}"
 
     payload = {
         "model": MODEL,
@@ -58,12 +147,13 @@ def review_code(code: str, language: str) -> dict:
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_message}
         ],
-        "temperature": 0.3,   # Lower = more consistent, less creative
-        "max_tokens": 2000
+        "temperature": 0.2,
+        "max_tokens": 3000
     }
 
+    # Call OpenRouter
     try:
-        with httpx.Client(timeout=30.0) as client:
+        with httpx.Client(timeout=60.0) as client:
             response = client.post(
                 f"{OPENROUTER_BASE}/chat/completions",
                 headers=get_headers(),
@@ -79,28 +169,36 @@ def review_code(code: str, language: str) -> dict:
     if response.status_code == 402:
         raise HTTPException(status_code=402, detail="OpenRouter credits exhausted. Please top up.")
     if response.status_code == 429:
-        raise HTTPException(status_code=429, detail="Rate limit hit. Please wait a moment and retry.")
+        raise HTTPException(status_code=429, detail="Rate limit hit. Please wait and retry.")
     if not response.is_success:
         raise HTTPException(status_code=response.status_code, detail=f"AI API error: {response.text}")
 
+    # Extract text content
     data = response.json()
+    raw_text = data["choices"][0]["message"]["content"]
 
-    # Extract the text content from the response
-    raw_text = data["choices"][0]["message"]["content"].strip()
+    # Clean markdown fences if present
+    cleaned = clean_json_response(raw_text)
 
-    # Clean up if model accidentally wraps in markdown code fences
-    if raw_text.startswith("```"):
-        raw_text = raw_text.split("```")[1]
-        if raw_text.startswith("json"):
-            raw_text = raw_text[4:]
-
+    # Try direct parse first
     try:
-        import json
-        parsed = json.loads(raw_text)
-    except Exception:
-        raise HTTPException(
-            status_code=500,
-            detail="AI returned an unexpected format. Please try again."
-        )
+        parsed = json.loads(cleaned)
+    except json.JSONDecodeError:
+        # Fallback: extract JSON object using regex
+        json_match = re.search(r'\{.*\}', cleaned, re.DOTALL)
+        if json_match:
+            try:
+                parsed = json.loads(json_match.group())
+            except json.JSONDecodeError:
+                raise HTTPException(
+                    status_code=500,
+                    detail="AI returned an unexpected format. Please try again with a different file."
+                )
+        else:
+            raise HTTPException(
+                status_code=500,
+                detail="AI returned an unexpected format. Please try again with a different file."
+            )
 
-    return parsed
+    # Validate and fill in any missing fields
+    return validate_and_fix(parsed, language)

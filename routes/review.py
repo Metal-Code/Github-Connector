@@ -7,48 +7,40 @@ from github_client import fetch_file_content, list_repo_files
 router = APIRouter()
 
 
-# ─── Request Schemas ──────────────────────────────────────────────────────────
-
 class CodeReviewRequest(BaseModel):
-    code: str = Field(
-        ...,
-        description="The code you want reviewed",
-        example="def divide(a, b):\n    return a / b"
-    )
-    language: Optional[str] = Field(
-        "python",
-        description="Programming language of the code",
-        example="python"
-    )
-    context: Optional[str] = Field(
-        None,
-        description="Optional: describe what this code is supposed to do",
-        example="This function handles payment processing"
-    )
+    code: str = Field(..., description="The code to review")
+    language: Optional[str] = Field("python", description="Programming language")
+    context: Optional[str] = Field(None, description="Optional context about what this code does")
 
 
 class RepoReviewRequest(BaseModel):
-    owner: str = Field(..., description="GitHub username or org", example="octocat")
-    repo: str = Field(..., description="Repository name", example="Hello-World")
-    file_path: str = Field(..., description="Path to the file inside the repo", example="src/main.py")
-    branch: Optional[str] = Field("main", description="Branch to fetch the file from", example="main")
-    context: Optional[str] = Field(None, description="Optional: describe what this file does")
+    owner: str = Field(..., example="octocat")
+    repo: str = Field(..., example="Hello-World")
+    file_path: str = Field(..., example="src/main.py")
+    branch: Optional[str] = Field("main")
+    context: Optional[str] = Field(None)
 
-
-# ─── Routes ──────────────────────────────────────────────────────────────────
 
 @router.post("/")
 def review(payload: CodeReviewRequest):
     """
-    Paste code directly and get an AI-powered senior dev review.
+    Paste code directly and get a structured AI code review.
+
+    Returns:
+    - total_score (0-100)
+    - code_issues list with line numbers, severity, fix_code
+    - suggestions with before/after code
+    - positives
+    - metrics (bug counts by severity)
     """
     code_to_review = payload.code
     if payload.context:
         code_to_review = f"# Context: {payload.context}\n\n{payload.code}"
 
     result = review_code(code=code_to_review, language=payload.language)
+
     return {
-        "language": payload.language,
+        "language": result.get("language", payload.language),
         "context": payload.context,
         "review": result
     }
@@ -59,16 +51,11 @@ def review_from_repo(payload: RepoReviewRequest):
     """
     Provide a GitHub repo + file path — file is fetched automatically and reviewed by AI.
 
-    Example POST body:
-    {
-        "owner": "your-username",
-        "repo": "your-repo",
-        "file_path": "main.py",
-        "branch": "main",
-        "context": "This is the FastAPI entry point"
-    }
+    Returns:
+    - file metadata (owner, repo, path, language, size, github_url)
+    - review with total_score, code_issues, suggestions, positives, metrics
     """
-    # Step 1: Fetch the file from GitHub
+    # Step 1: Fetch file from GitHub
     file_data = fetch_file_content(
         owner=payload.owner,
         repo=payload.repo,
@@ -76,12 +63,12 @@ def review_from_repo(payload: RepoReviewRequest):
         branch=payload.branch
     )
 
-    # Step 2: Prepend context for the AI if provided
+    # Step 2: Build code string with optional context
     code_to_review = file_data["content"]
     if payload.context:
         code_to_review = f"# Context: {payload.context}\n\n{code_to_review}"
 
-    # Step 3: Send to AI for review
+    # Step 3: Run AI review
     result = review_code(code=code_to_review, language=file_data["language"])
 
     return {
@@ -107,8 +94,6 @@ def list_files(
 ):
     """
     Browse files in a GitHub repo to find paths you can review.
-
-    Example: GET /review/repo/files?owner=octocat&repo=Hello-World
     Use the returned 'path' values as file_path in POST /review/repo
     """
     files = list_repo_files(owner=owner, repo=repo, path=path, branch=branch)

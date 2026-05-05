@@ -42,12 +42,24 @@ def fetch_org_repos(org: str) -> list:
 
 # ─── Issues ──────────────────────────────────────────────────────────────────
 
+# def fetch_repo_issues(owner: str, repo: str, state: str = "open") -> list:
+#     url = f"{GITHUB_API_BASE}/repos/{owner}/{repo}/issues"
+#     with httpx.Client() as client:
+#         response = client.get(url, headers=get_headers(), params={"state": state, "per_page": 30})
+#     return handle_github_response(response)
+
+
 def fetch_repo_issues(owner: str, repo: str, state: str = "open") -> list:
     url = f"{GITHUB_API_BASE}/repos/{owner}/{repo}/issues"
     with httpx.Client() as client:
-        response = client.get(url, headers=get_headers(), params={"state": state, "per_page": 30})
-    return handle_github_response(response)
-
+        response = client.get(url, headers=get_headers(), params={
+            "state": state,
+            "per_page": 100,           # increased from 30
+            "type": "issue"            # exclude pull requests
+        })
+    data = handle_github_response(response)
+    # Extra safety filter — GitHub sometimes still returns PRs
+    return [i for i in data if "pull_request" not in i]
 
 def create_repo_issue(owner: str, repo: str, title: str, body: str, labels: list) -> dict:
     url = f"{GITHUB_API_BASE}/repos/{owner}/{repo}/issues"
