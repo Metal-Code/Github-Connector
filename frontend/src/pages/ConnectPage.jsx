@@ -141,7 +141,7 @@ export default function ConnectPage() {
           </div>
 
           {/* Footer note */}
-          <div style={{ marginTop: 40, paddingTop: 24, borderTop: `1px solid ${c.border}`, display: "flex", alignItems: "center", gap: 12 }}>
+          {/* <div style={{ marginTop: 40, paddingTop: 24, borderTop: `1px solid ${c.border}`, display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ display: "flex" }}>
               {[
                 "https://lh3.googleusercontent.com/aida-public/AB6AXuBn9L7wALVu4CYLWZ445skH6KAQ7DiZGUyOTvN9nWKRf4XXPbMYdwUz6SfoYmmp8IozLNVi0Q6yxvyvgqT31PTeovfMI9g6-KG8Pv4VpUeRvomm3mrWJa3seqf5lN1USolQbVRE3JB5xiOprR4CTh_9IWR8RnPWhZheI3uClXouUUlzT0E-lAzWTuKinManUeHAspRGz9qzkajq7J1pXne6uaSO3R0Wi-ysks-AmCGlfzWJxq7V_RwCgtZqadQ2B82Tpaj0MUnOEv2R",
@@ -156,7 +156,7 @@ export default function ConnectPage() {
             <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 11, color: c.textMuted }}>
               Trusted by teams at Vercel, Stripe, and Railway.
             </span>
-          </div>
+          </div> */}
         </div>
       </div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
