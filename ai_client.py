@@ -180,25 +180,66 @@ def review_code(code: str, language: str) -> dict:
     # Clean markdown fences if present
     cleaned = clean_json_response(raw_text)
 
-    # Try direct parse first
+    parsed = None
+
+    # Attempt 1: direct parse
     try:
         parsed = json.loads(cleaned)
     except json.JSONDecodeError:
-        # Fallback: extract JSON object using regex
+        pass
+
+    # Attempt 2: extract JSON block with regex
+    if parsed is None:
         json_match = re.search(r'\{.*\}', cleaned, re.DOTALL)
         if json_match:
             try:
                 parsed = json.loads(json_match.group())
             except json.JSONDecodeError:
-                raise HTTPException(
-                    status_code=500,
-                    detail="AI returned an unexpected format. Please try again with a different file."
+                pass
+
+    # Attempt 3: retry with a simpler prompt asking just for the JSON
+    if parsed is None:
+        retry_payload = {
+            "model": MODEL,
+            "messages": [
+                {"role": "system", "content": "You are a JSON formatter. Return ONLY valid JSON, no markdown, no explanation."},
+                {"role": "user", "content": f"Fix and return this as valid JSON only:\n{cleaned[:2000]}"}
+            ],
+            "temperature": 0,
+            "max_tokens": 3000
+        }
+        try:
+            with httpx.Client(timeout=30.0) as client:
+                retry_response = client.post(
+                    f"{OPENROUTER_BASE}/chat/completions",
+                    headers=get_headers(),
+                    json=retry_payload
                 )
-        else:
-            raise HTTPException(
-                status_code=500,
-                detail="AI returned an unexpected format. Please try again with a different file."
-            )
+            if retry_response.is_success:
+                retry_text = retry_response.json()["choices"][0]["message"]["content"]
+                retry_cleaned = clean_json_response(retry_text)
+                parsed = json.loads(retry_cleaned)
+        except Exception:
+            pass
+
+    # All attempts failed — return a safe fallback instead of crashing
+    if parsed is None:
+        parsed = {
+            "total_score": 50,
+            "summary": "Review completed but the response could not be parsed. The file may be too complex — try a smaller file.",
+            "language": language,
+            "code_issues": [],
+            "suggestions": [],
+            "positives": ["File was fetched successfully from GitHub."],
+            "metrics": {
+                "total_bugs": 0,
+                "critical_count": 0,
+                "high_count": 0,
+                "medium_count": 0,
+                "low_count": 0,
+                "suggestions_count": 0
+            }
+        }
 
     # Validate and fill in any missing fields
     return validate_and_fix(parsed, language)

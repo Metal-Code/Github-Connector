@@ -86,7 +86,7 @@ export default function BrowserPage() {
             cursor: reviewLoading ? "not-allowed" : "pointer",
             display: "flex", alignItems: "center", gap: 6,
           }}>
-            🔍 {reviewLoading ? "Reviewing..." : "Review this file"}
+            {reviewLoading ? "Reviewing..." : "Review this file"}
           </button>
         )}
       </div>
