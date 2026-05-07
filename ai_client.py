@@ -29,7 +29,7 @@ Return this EXACT structure with no markdown, no code fences, no explanation out
     {
       "id": <integer starting from 1>,
       "line": <line number as integer, or 0 if unknown>,
-      "error_code_line": "<the actual problematic code snippet from the file>",
+      "error_code_line": "<the full problematic code block, can be multiple lines if needed>",
       "severity": "<one of: critical | high | medium | low>",
       "category": "<one of: bug | security | performance | style | maintainability>",
       "description": "<clear explanation of what is wrong and why it matters>",
@@ -148,7 +148,7 @@ def review_code(code: str, language: str) -> dict:
             {"role": "user", "content": user_message}
         ],
         "temperature": 0.2,
-        "max_tokens": 3000
+        "max_tokens": 4000
     }
 
     # Call OpenRouter
