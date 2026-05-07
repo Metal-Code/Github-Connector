@@ -40,7 +40,8 @@ export function getCategoryStyle(cat) {
     performance:    { bg: "rgba(210,153,34,0.15)",  text: "#d29522" },
     readability:    { bg: "rgba(35,134,54,0.15)",   text: "#3fb950" },
     best_practice:  { bg: "rgba(88,166,255,0.15)",  text: "#58a6ff" },
-    maintainability:{ bg: "rgba(192,132,252,0.15)", text: "#c084fc" },
+    maintainability:{ bg: "rgba(192,132,252,0.15)", text: "#8c19ff" },
+    // maintainability:{ bg: "rgba(192,132,252,0.15)", text: "#c084fc" },
     style:          { bg: "rgba(148,163,184,0.15)", text: "#94a3b8" },
     bug:            { bg: "rgba(248,81,73,0.15)",   text: "#f85149" },
   };

@@ -112,9 +112,9 @@ export default function ConnectPage() {
           )}
 
           {/* Buttons */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 8 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16, marginTop: 8 }}>
             <button onClick={handleBrowse} disabled={!repoPath || loading} style={{
-              backgroundColor: !repoPath || loading ? "#21262d" : "#0078D4",
+              backgroundColor: !repoPath || loading ? c.hoverBg : "#0078D4",
               color: !repoPath || loading ? c.textMuted : "white",
               border: "none", borderRadius: 8, padding: "16px",
               fontFamily: "Space Grotesk, sans-serif", fontSize: 11, fontWeight: 700,
@@ -127,7 +127,7 @@ export default function ConnectPage() {
               {loading ? "Loading..." : "Browse Files"}
             </button>
 
-            <button disabled style={{
+            {/* <button disabled style={{
               backgroundColor: "transparent", border: `1px solid ${c.border}`,
               color: c.textMuted, borderRadius: 8, padding: "16px",
               fontFamily: "Space Grotesk, sans-serif", fontSize: 11, fontWeight: 700,
@@ -137,7 +137,7 @@ export default function ConnectPage() {
             }}>
               <span style={{ width: 14, height: 14, border: `2px solid ${c.textMuted}`, borderTopColor: "transparent", borderRadius: "50%", animation: "spin 1s linear infinite", display: "inline-block" }} />
               Analyzing...
-            </button>
+            </button> */}
           </div>
 
           {/* Footer note */}

@@ -2,11 +2,10 @@ import { useApp } from "../../context/AppContext";
 import Icon from "../ui/Icon";
 
 const SIDEBAR_ITEMS = [
-  { icon: "folder",       label: "Explorer",   filled: true,  pages: ["connect","browser","review","error"], target: "connect" },
-  { icon: "psychology",   label: "Reviewer",   filled: false, pages: ["review"],   target: "review" },
-  { icon: "account_tree", label: "Git",        filled: false, pages: ["commits"],  target: "commits" },
-  { icon: "rule",         label: "Diagnostics",filled: false, pages: ["issues"],   target: "issues" },
-  { icon: "extension",    label: "Extensions", filled: false, pages: [],           target: null },
+  { icon: "folder",       label: "Explorer",    filled: true,  pages: ["connect","browser","review","error"], target: "connect"  },
+  { icon: "psychology",   label: "Reviewer",    filled: false, pages: ["review"],                             target: "review"   },
+  // { icon: "account_tree", label: "Git",         filled: false, pages: ["commits"],                            target: "commits"  },
+  { icon: "rule",         label: "Diagnostics", filled: false, pages: ["issues"],                             target: "issues"   },
 ];
 
 export default function Sidebar() {
@@ -26,18 +25,18 @@ export default function Sidebar() {
         const active = item.pages.includes(page);
         return (
           <button key={i} title={item.label}
-            onClick={() => item.target && setPage(item.target)}
+            onClick={() => setPage(item.target)}
             style={{
               width: "100%", padding: "10px 0",
               background: active ? "rgba(0,120,212,0.1)" : "none",
               border: "none",
               borderLeft: active ? "2px solid #0078D4" : "2px solid transparent",
-              cursor: item.target ? "pointer" : "default",
+              cursor: "pointer",
               color: active ? "#0078D4" : colors.textMuted,
               transition: "all 0.15s",
               display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
             }}
-            onMouseEnter={e => { if (!active && item.target) e.currentTarget.style.backgroundColor = "#21262d"; }}
+            onMouseEnter={e => { if (!active) e.currentTarget.style.backgroundColor = "#21262d"; }}
             onMouseLeave={e => { if (!active) e.currentTarget.style.backgroundColor = "transparent"; }}
           >
             <Icon name={item.icon} size={22} color={active ? "#0078D4" : colors.textMuted} filled={active && item.filled} />

@@ -10,19 +10,15 @@ export default function Footer() {
       display: "flex", justifyContent: "space-between", alignItems: "center",
       padding: "0 12px", zIndex: 50,
     }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-        <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#238636", display: "flex", alignItems: "center", gap: 4 }}>
-          <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#238636", display: "inline-block" }} />
-          v1.4.2-stable | System Ready
+      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+        <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#238636", display: "inline-block" }} />
+        <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#238636" }}>
+          System Ready
         </span>
-        {["Docs", "Support", "API Status"].map(l => (
-          <a key={l} href="#" style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: colors.textMuted, textDecoration: "none" }}>{l}</a>
-        ))}
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: colors.textMuted }}>Ln 1, Col 1</span>
-        <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: colors.textMuted }}>UTF-8</span>
-      </div>
+      <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: colors.textMuted }}>
+        UTF-8
+      </span>
     </footer>
   );
 }
