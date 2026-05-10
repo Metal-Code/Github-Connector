@@ -159,6 +159,9 @@ def review_code(code: str, language: str) -> dict:
                 headers=get_headers(),
                 json=payload
             )
+        print("STATUS:", response.status_code)
+        print("RESPONSE:", response.text[:500])
+        
     except httpx.TimeoutException:
         raise HTTPException(status_code=504, detail="AI service timed out. Please try again.")
     except httpx.RequestError as e:
