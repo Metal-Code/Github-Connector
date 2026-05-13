@@ -16,6 +16,10 @@ export default function IssuesPage() {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [stateFilter, setStateFilter] = useState("open");
+  const [showModal, setShowModal] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newBody, setNewBody] = useState("");
+  const [creating, setCreating] = useState(false);
   const c = colors;
 
   useEffect(() => {
@@ -32,6 +36,35 @@ export default function IssuesPage() {
       if (res.ok) setIssues(data.issues || []);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
+  }
+
+
+  async function createIssue() 
+  {
+    const parsed = parseRepo();
+    if (!parsed || !newTitle) return;
+    setCreating(true);
+    try {
+      const res = await fetch(`${API_BASE}/issues/create`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          owner: parsed.owner,
+          repo: parsed.repo,
+          title: newTitle,
+          body: newBody,
+          labels: []
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setShowModal(false);
+        setNewTitle("");
+        setNewBody("");
+        fetchIssues(); // refresh the list
+      }
+    } catch (e) { console.error(e); }
+    finally { setCreating(false); }
   }
 
   const filtered = issues.filter(i =>
@@ -52,7 +85,7 @@ export default function IssuesPage() {
             </code>{" "}repo
           </p>
         </div>
-        <button onClick={fetchIssues} style={{
+        <button onClick={() => setShowModal(true)} style={{
           backgroundColor: c.accent, color: "white", border: "none", borderRadius: 6,
           padding: "10px 20px", fontFamily: "Space Grotesk, sans-serif", fontSize: 11,
           fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", cursor: "pointer",
@@ -167,6 +200,68 @@ export default function IssuesPage() {
           </div>
         )}
       </div>
+
+        {showModal && (
+  <div style={{
+    position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.6)",
+    display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100
+  }}>
+    <div style={{
+      backgroundColor: c.cardBg, border: `1px solid ${c.border}`,
+      borderRadius: 12, padding: 28, width: 500, maxWidth: "90vw"
+    }}>
+      <h2 style={{ margin: "0 0 20px", fontSize: 16, fontWeight: 700, color: c.textPrimary, fontFamily: "Inter, sans-serif" }}>
+        Create New Issue
+      </h2>
+
+      <div style={{ marginBottom: 16 }}>
+        <label style={{ fontSize: 11, fontWeight: 700, color: c.textMuted, fontFamily: "Space Grotesk, sans-serif", letterSpacing: "0.05em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>
+          Title *
+        </label>
+        <input
+          value={newTitle}
+          onChange={e => setNewTitle(e.target.value)}
+          placeholder="Issue title..."
+          style={{ width: "100%", backgroundColor: c.bg, border: `1px solid ${c.border}`, borderRadius: 6, padding: "10px 12px", color: c.textPrimary, fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }}
+          onFocus={e => e.target.style.borderColor = "#0078D4"}
+          onBlur={e => e.target.style.borderColor = c.border}
+        />
+      </div>
+
+      <div style={{ marginBottom: 24 }}>
+        <label style={{ fontSize: 11, fontWeight: 700, color: c.textMuted, fontFamily: "Space Grotesk, sans-serif", letterSpacing: "0.05em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>
+          Description
+        </label>
+        <textarea
+          value={newBody}
+          onChange={e => setNewBody(e.target.value)}
+          placeholder="Describe the issue..."
+          rows={5}
+          style={{ width: "100%", backgroundColor: c.bg, border: `1px solid ${c.border}`, borderRadius: 6, padding: "10px 12px", color: c.textPrimary, fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", resize: "vertical", boxSizing: "border-box" }}
+          onFocus={e => e.target.style.borderColor = "#0078D4"}
+          onBlur={e => e.target.style.borderColor = c.border}
+        />
+      </div>
+
+      <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+        <button
+          onClick={() => { setShowModal(false); setNewTitle(""); setNewBody(""); }}
+          style={{ backgroundColor: "transparent", color: c.textMuted, border: `1px solid ${c.border}`, borderRadius: 6, padding: "8px 18px", fontFamily: "Space Grotesk, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", cursor: "pointer" }}
+        >
+          Cancel
+        </button>
+        <button
+          onClick={createIssue}
+          disabled={!newTitle || creating}
+          style={{ backgroundColor: !newTitle || creating ? c.border : "#0078D4", color: !newTitle || creating ? c.textMuted : "white", border: "none", borderRadius: 6, padding: "8px 18px", fontFamily: "Space Grotesk, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", cursor: !newTitle || creating ? "not-allowed" : "pointer" }}
+        >
+          {creating ? "Creating..." : "Create Issue"}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 }
