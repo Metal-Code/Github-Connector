@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes import repos, issues, commits, review
 
+
 app = FastAPI(
     title="GitHub Cloud Connector",
     description="A REST API connector for GitHub with AI-powered code review.",
@@ -34,3 +35,5 @@ def root():
         "message": "GitHub Cloud Connector is running.",
         "docs": "/docs"
     }
+
+

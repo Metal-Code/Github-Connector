@@ -39,8 +39,34 @@ export default function IssuesPage() {
   }
 
 
-  async function createIssue() 
-  {
+  // async function createIssue() 
+  // {
+  //   const parsed = parseRepo();
+  //   if (!parsed || !newTitle) return;
+  //   setCreating(true);
+  //   try {
+  //     const res = await fetch(`${API_BASE}/issues/create`, {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({
+  //         owner: parsed.owner,
+  //         repo: parsed.repo,
+  //         title: newTitle,
+  //         body: newBody,
+  //         labels: []
+  //       })
+  //     });
+  //     const data = await res.json();
+  //     if (res.ok) {
+  //       setShowModal(false);
+  //       setNewTitle("");
+  //       setNewBody("");
+  //       fetchIssues(); // refresh the list
+  //     }
+  //   } catch (e) { console.error(e); }
+  //   finally { setCreating(false); }
+  // }
+  async function createIssue() {
     const parsed = parseRepo();
     if (!parsed || !newTitle) return;
     setCreating(true);
@@ -58,10 +84,21 @@ export default function IssuesPage() {
       });
       const data = await res.json();
       if (res.ok) {
+        // Immediately add the new issue to the top of the list
+        const newIssue = {
+          number: data.issue.number,
+          title: newTitle,
+          body: newBody,
+          state: "open",
+          author: parsed.owner,
+          labels: [],
+          created_at: new Date().toISOString(),
+          url: data.issue.url
+        };
+        setIssues(prev => [newIssue, ...prev]);
         setShowModal(false);
         setNewTitle("");
         setNewBody("");
-        fetchIssues(); // refresh the list
       }
     } catch (e) { console.error(e); }
     finally { setCreating(false); }
